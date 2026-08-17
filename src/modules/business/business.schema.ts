@@ -25,11 +25,21 @@ export const storeSchema = z.object({
   images,
 });
 
+/**
+ * Prices are in XOF (West African CFA franc), which has no subunit in
+ * circulation — so amounts are whole numbers, not decimals.
+ *
+ * The ceiling is well under the `Decimal(10,2)` column limit while still
+ * allowing high-value listings (50,000,000 XOF is roughly USD 80,000).
+ */
+const MAX_PRICE = 50_000_000;
+const price = z.coerce.number().int("Price must be a whole number").min(0).max(MAX_PRICE);
+
 export const productSchema = z.object({
   name: z.string().min(2).max(120),
   description: z.string().max(2000).optional(),
   categoryId: z.string().optional(),
-  price: z.coerce.number().min(0).max(1_000_000),
+  price,
   stock: z.coerce.number().int().min(0).default(0),
   available: z.coerce.boolean().default(true),
   images,
@@ -40,8 +50,8 @@ export const serviceSchema = z
     name: z.string().min(2).max(120),
     description: z.string().max(2000).optional(),
     categoryId: z.string().optional(),
-    priceMin: z.coerce.number().min(0).optional(),
-    priceMax: z.coerce.number().min(0).optional(),
+    priceMin: price.optional(),
+    priceMax: price.optional(),
     contactMethod: z.string().max(200).optional(),
     images,
   })
